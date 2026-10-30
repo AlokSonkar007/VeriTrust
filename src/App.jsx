@@ -28,6 +28,7 @@ const applicationSeed = [
 const documentSeed = [
   { id: "DOC-9812", name: "Institution Registration Certificate.pdf", category: "Institutional", institution: "Northfield Institute of Technology", appId: "VT-2026-0148", uploaded: "24 Oct 2026", size: "1.8 MB", status: "Verified", pages: 4, expiry: "18 Mar 2028" },
   { id: "DOC-9813", name: "Faculty Position Statement.pdf", category: "Faculty", institution: "Northfield Institute of Technology", appId: "VT-2026-0148", uploaded: "24 Oct 2026", size: "2.4 MB", status: "Review", pages: 12, expiry: "—" },
+  { id: "DOC-9814", name: "Fire Safety Compliance Certificate.pdf", category: "Infrastructure", institution: "Northfield Institute of Technology", appId: "VT-2026-0148", uploaded: "24 Oct 2026", size: "740 KB", status: "Review", pages: 2, expiry: "11 Dec 2026" },
   { id: "DOC-9808", name: "Building Safety Certificate.pdf", category: "Infrastructure", institution: "Riverview College of Engineering", appId: "VT-2026-0147", uploaded: "23 Oct 2026", size: "960 KB", status: "Expired", pages: 3, expiry: "30 Sep 2026" },
   { id: "DOC-9809", name: "Land Ownership Deed.pdf", category: "Land & Building", institution: "Riverview College of Engineering", appId: "VT-2026-0147", uploaded: "23 Oct 2026", size: "3.1 MB", status: "Verified", pages: 18, expiry: "—" },
   { id: "DOC-9801", name: "Audited Financial Statement FY25.pdf", category: "Financial", institution: "Meridian School of Applied Sciences", appId: "VT-2026-0146", uploaded: "22 Oct 2026", size: "1.2 MB", status: "Verified", pages: 9, expiry: "—" },
@@ -209,6 +210,7 @@ function OverviewPage({ applications, activity, onOpen, onNavigate, onNew }) {
 
 function ApplicationsPage({ applications, onOpen, onNew, onAssign, initialQuery = "" }) {
   const [query, setQuery] = useState(initialQuery);
+  useEffect(() => setQuery(initialQuery), [initialQuery]);
   const [status, setStatus] = useState("All statuses");
   const [kind, setKind] = useState("All types");
   const [sort, setSort] = useState("Newest first");
@@ -241,7 +243,12 @@ function ApplicationWorkspace({ app, documents, onBack, onNavigate, onAudit, onS
   const [reviewed, setReviewed] = useState([]);
   const [findingStates, setFindingStates] = useState({});
   const [confirmAction, setConfirmAction] = useState(false);
-  const appFindings = findingSeed.filter((f) => app.id === "VT-2026-0148" || app.id === "VT-2026-0147" || app.id === "VT-2026-0143").slice(0, app.id === "VT-2026-0148" ? 3 : 2);
+  const appFindings = app.id === "VT-2026-0148" ? findingSeed : app.id === "VT-2026-0147" ? [
+    { id: "F-2051", severity: "High", title: "Expired building safety certificate", document: "Building Safety Certificate.pdf", page: 1, field: "Valid until", detected: "30 Sep 2026", expected: "Valid for current review period", rule: "AICTE-INF-02", explanation: "The submitted building safety certificate expired before this review. Request an updated certificate and confirm its applicability.", state: "Open" },
+    { id: "F-2052", severity: "Medium", title: "Land area requires confirmation", document: "Land Ownership Deed.pdf", page: 4, field: "Plot area", detected: "8,400 sq. m.", expected: "8,650 sq. m.", rule: "AICTE-LND-03", explanation: "The land area extracted from the deed differs from the figure declared in the application. Confirm the correct surveyed area.", state: "Open" }
+  ] : app.id === "VT-2026-0143" ? [
+    { id: "F-2053", severity: "High", title: "Faculty qualification record mismatch", document: "Faculty Qualification Records.pdf", page: 11, field: "Qualification status", detected: "Pending verification", expected: "Supporting qualification evidence", rule: "AICTE-FAC-06", explanation: "A faculty qualification entry requires supporting evidence or reviewer confirmation before the record can be accepted.", state: "Open" }
+  ] : [];
   const appDocs = documents.filter((d) => d.appId === app.id);
   const setFinding = (id, value) => {
     setFindingStates((s) => ({ ...s, [id]: value }));
