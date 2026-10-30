@@ -115,8 +115,8 @@ function Severity({ value }) {
   return <span className={"severity " + String(value || "").toLowerCase()}>{value} priority</span>;
 }
 
-function Button({ children, onClick, variant = "default", size = "", icon: Icon, disabled = false, className = "", type = "button" }) {
-  return <button type={type} disabled={disabled} onClick={onClick} className={cx("btn", variant === "primary" && "btn-primary", variant === "quiet" && "btn-quiet", variant === "danger" && "btn-danger", size === "sm" && "btn-sm", className)}>
+function Button({ children, onClick, variant = "default", size = "", icon: Icon, disabled = false, className = "", type = "button", form }) {
+  return <button type={type} form={form} disabled={disabled} onClick={onClick} className={cx("btn", variant === "primary" && "btn-primary", variant === "quiet" && "btn-quiet", variant === "danger" && "btn-danger", size === "sm" && "btn-sm", className)}>
     {Icon && <Icon size={14} strokeWidth={1.8} />}{children}
   </button>;
 }
@@ -143,14 +143,14 @@ function Kpi({ label, value, note, change, icon: Icon, trend = "up" }) {
   </div>;
 }
 
-function ApplicationTable({ rows, onOpen, compact = false }) {
+function ApplicationTable({ rows, onOpen, onAssign, compact = false }) {
   return <div className="data-table-wrap"><table className="data-table">
     <thead><tr><th>Application</th><th>Institution</th><th>Application type</th><th>Submitted</th><th>Status</th><th>Reviewer</th><th></th></tr></thead>
     <tbody>{rows.length ? rows.map((app) => <tr key={app.id}>
       <td><button className="text-link id-text" onClick={() => onOpen(app.id)}>{app.id}</button></td>
       <td><span className="cell-primary">{app.institution}</span></td>
       <td>{app.type}</td><td>{app.submitted}</td><td><Status value={app.status} /></td>
-      <td>{app.reviewer}</td><td><button className="table-action" title="Open application" onClick={() => onOpen(app.id)}><ArrowRight size={15} /></button></td>
+      <td>{onAssign ? <select className="select" style={{ fontSize: "10px", padding: "5px 7px", minWidth: 120 }} value={app.reviewer} onChange={(e) => onAssign(app.id, e.target.value)}><option>Ananya Verma</option><option>Rahul Mehta</option><option>Priya Nair</option><option>Unassigned</option></select> : app.reviewer}</td><td><button className="table-action" title="Open application" onClick={() => onOpen(app.id)}><ArrowRight size={15} /></button></td>
     </tr>) : <tr><td colSpan="7"><div className="empty-state">No applications match these filters.</div></td></tr>}</tbody>
   </table></div>;
 }
@@ -206,8 +206,8 @@ function OverviewPage({ applications, activity, onOpen, onNavigate, onNew }) {
   </>;
 }
 
-function ApplicationsPage({ applications, onOpen, onNew, onUpdate }) {
-  const [query, setQuery] = useState("");
+function ApplicationsPage({ applications, onOpen, onNew, onAssign, initialQuery = "" }) {
+  const [query, setQuery] = useState(initialQuery);
   const [status, setStatus] = useState("All statuses");
   const [kind, setKind] = useState("All types");
   const [sort, setSort] = useState("Newest first");
@@ -228,7 +228,7 @@ function ApplicationsPage({ applications, onOpen, onNew, onUpdate }) {
       <select className="select" value={sort} onChange={(e) => setSort(e.target.value)}><option>Newest first</option><option>Oldest first</option></select>
       <span className="muted small" style={{ marginLeft: "auto" }}>{filtered.length} records</span>
     </div>
-    <Panel><ApplicationTable rows={filtered} onOpen={onOpen} /></Panel>
+    <Panel><ApplicationTable rows={filtered} onOpen={onOpen} onAssign={onAssign} /></Panel>
     <div className="small muted" style={{ marginTop: 12 }}>Showing sample application records. Create a new application to add a record to this browser session.</div>
   </>;
 }
@@ -525,7 +525,7 @@ function AuditPage({ activity }) {
   const [query, setQuery] = useState("");
   const [kind, setKind] = useState("All actors");
   const [period, setPeriod] = useState("All time");
-  const filtered = activity.filter((a) => (a.actor + " " + a.action + " " + a.appId + " " + a.detail).toLowerCase().includes(query.toLowerCase()) && (kind === "All actors" || (kind === "System" ? a.kind === "system" : a.kind === "human")));
+  const filtered = activity.filter((a) => (a.actor + " " + a.action + " " + a.appId + " " + a.detail).toLowerCase().includes(query.toLowerCase()) && (kind === "All actors" || (kind === "System" ? a.kind === "system" : a.kind === "human")) && (period === "All time" || (period === "Today" ? a.time.startsWith("Today") : a.time.startsWith("Today") || a.time.startsWith("Yesterday")));
   return <>
     <PageHeading title="Audit trail" description="A chronological record of reviewer actions and automated workflow events." actions={<span className="pill"><LockKeyhole size={11} /> Read-only event history</span>} />
     <div className="notice" style={{ marginBottom: 15 }}><Info size={14} /> Audit events in this prototype are stored in browser local storage. This is not a tamper-proof production audit log.</div>
@@ -570,6 +570,7 @@ function App() {
   };
   const openApplication = (id) => { setSelectedAppId(id); setActivePage("application"); setMobileOpen(false); };
   const updateStatus = (id, status) => setApplications((old) => old.map((a) => a.id === id ? { ...a, status } : a));
+  const assignReviewer = (id, reviewer) => { setApplications((old) => old.map((a) => a.id === id ? { ...a, reviewer } : a)); addAudit("Reviewer assignment updated", id, "Assigned reviewer: " + reviewer); notify("Reviewer assignment updated."); };
   const createApplication = (e) => {
     e.preventDefault();
     if (!newApp.institution.trim()) return;
@@ -619,7 +620,7 @@ function App() {
       </header>
       <main className="page-wrap">
         {activePage === "overview" && <OverviewPage applications={applications} activity={activity} onOpen={openApplication} onNavigate={nav} onNew={() => setModal("new-app")} />}
-        {activePage === "applications" && <ApplicationsPage applications={applications} onOpen={openApplication} onNew={() => setModal("new-app")} onUpdate={updateStatus} />}
+        {activePage === "applications" && <ApplicationsPage applications={applications} onOpen={openApplication} onNew={() => setModal("new-app")} onAssign={assignReviewer} initialQuery={globalSearch} />}
         {activePage === "application" && selectedApp && <ApplicationWorkspace app={selectedApp} documents={documents} onBack={() => nav("applications")} onNavigate={nav} onAudit={addAudit} onStatus={updateStatus} onToast={notify} />}
         {activePage === "application" && !selectedApp && <div className="empty-state"><strong>Application not found</strong><Button onClick={() => nav("applications")}>Back to applications</Button></div>}
         {activePage === "documents" && <RepositoryPage documents={documents} onUpload={uploadDocuments} onToast={notify} />}
