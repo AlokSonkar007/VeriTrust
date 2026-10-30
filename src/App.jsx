@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Activity, AlertCircle, AlertTriangle, ArrowDownRight, ArrowRight, ArrowUpRight,
   Bell, BookOpen, Check, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight,
@@ -550,8 +551,10 @@ function App() {
   const [documents, setDocuments] = useStoredState("veritrust-documents", documentSeed);
   const [rules, setRules] = useStoredState("veritrust-rules", ruleSeed);
   const [activity, setActivity] = useStoredState("veritrust-audit", activitySeed);
-  const [activePage, setActivePage] = useState("overview");
-  const [selectedAppId, setSelectedAppId] = useState(null);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const activePage = location.pathname === "/" ? "overview" : location.pathname.startsWith("/applications/") ? "application" : location.pathname.slice(1);
+  const selectedAppId = activePage === "application" ? decodeURIComponent(location.pathname.split("/")[2] || "") : null;
   const [toasts, setToasts] = useState([]);
   const [modal, setModal] = useState("");
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -568,7 +571,7 @@ function App() {
     const entry = { id: Date.now() + Math.random(), actor: kind === "system" ? "Verification engine" : "Ananya Verma", action, appId: appId || "—", detail: detail || "", time: "Today, " + new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }), kind };
     setActivity((old) => [entry, ...old]);
   };
-  const openApplication = (id) => { setSelectedAppId(id); setActivePage("application"); setMobileOpen(false); };
+  const openApplication = (id) => { navigate("/applications/" + encodeURIComponent(id)); setMobileOpen(false); };
   const updateStatus = (id, status) => setApplications((old) => old.map((a) => a.id === id ? { ...a, status } : a));
   const assignReviewer = (id, reviewer) => { setApplications((old) => old.map((a) => a.id === id ? { ...a, reviewer } : a)); addAudit("Reviewer assignment updated", id, "Assigned reviewer: " + reviewer); notify("Reviewer assignment updated."); };
   const createApplication = (e) => {
@@ -582,7 +585,7 @@ function App() {
     const added = files.map((file) => ({ id: makeId("DOC"), name: file.name, category: file.type.startsWith("image/") ? "Documentation" : "Institutional", institution: "New upload · Unassigned", appId: "Unassigned", uploaded: today(), size: file.size > 1024 * 1024 ? (file.size / 1024 / 1024).toFixed(1) + " MB" : Math.max(1, Math.round(file.size / 1024)) + " KB", status: "Review", pages: "—", expiry: "—" }));
     setDocuments((old) => [...added, ...old]); added.forEach((d) => addAudit("Document uploaded", "—", d.name));
   };
-  const nav = (page) => { setActivePage(page); setSelectedAppId(null); setMobileOpen(false); };
+  const nav = (page) => { navigate(page === "overview" ? "/" : "/" + page); setMobileOpen(false); };
   const selectedApp = applications.find((a) => a.id === selectedAppId);
 
   const pageTitle = activePage === "overview" ? "Overview" : activePage === "application" ? "Application review" : (navigation.find((n) => n.id === activePage)?.label || "Overview");
