@@ -533,7 +533,19 @@ function AuditPage({ activity }) {
   const [query, setQuery] = useState("");
   const [kind, setKind] = useState("All actors");
   const [period, setPeriod] = useState("All time");
-  const filtered = activity.filter((a) => (a.actor + " " + a.action + " " + a.appId + " " + a.detail).toLowerCase().includes(query.toLowerCase()) && (kind === "All actors" || (kind === "System" ? a.kind === "system" : a.kind === "human")) && (period === "All time" || (period === "Today" ? a.time.startsWith("Today") : a.time.startsWith("Today") || a.time.startsWith("Yesterday")));
+  const filtered = activity.filter((a) => {
+    const matchesQuery = (a.actor + " " + a.action + " " + a.appId + " " + a.detail)
+      .toLowerCase()
+      .includes(query.toLowerCase());
+    const matchesActor =
+      kind === "All actors" || (kind === "System" ? a.kind === "system" : a.kind === "human");
+    const matchesPeriod =
+      period === "All time" ||
+      (period === "Today"
+        ? a.time.startsWith("Today")
+        : a.time.startsWith("Today") || a.time.startsWith("Yesterday"));
+    return matchesQuery && matchesActor && matchesPeriod;
+  });
   return <>
     <PageHeading title="Audit trail" description="A chronological record of reviewer actions and automated workflow events." actions={<span className="pill"><LockKeyhole size={11} /> Read-only event history</span>} />
     <div className="notice" style={{ marginBottom: 15 }}><Info size={14} /> Audit events in this prototype are stored in browser local storage. This is not a tamper-proof production audit log.</div>
