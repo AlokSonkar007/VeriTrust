@@ -33,7 +33,7 @@ npm run preview
 
 ## Important prototype boundaries
 
-This is a **frontend-only demonstration**. OCR extraction, anomaly detection and verification results are simulated with sample data. Uploaded files and reviewer changes are stored in the current browser using local storage; files are not sent to a server. There is no live AI model, OCR engine, AICTE integration, authentication service, backend database or production-grade immutable audit service.
+This is a **frontend-only demonstration**. OCR extraction, anomaly detection and verification results are simulated with sample data. Uploaded document metadata and reviewer changes are stored in the current browser using local storage. Actual file binaries are not persisted or sent to a server. There is no live AI model, OCR engine, AICTE integration, authentication service, backend database or production-grade immutable audit service.
 
 Automated findings are decision-support indicators only. They are not proof of fraud or a substitute for human regulatory review.
 
