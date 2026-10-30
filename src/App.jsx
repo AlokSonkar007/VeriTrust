@@ -599,7 +599,7 @@ function App() {
       <div className="nav-label">Workspace</div>
       <nav className="nav-list">{navigation.map((item) => {
         const Icon = item.icon;
-        return <button key={item.id} className={cx("nav-item", activePage === item.id && "active")} onClick={() => nav(item.id)}><Icon size={16} strokeWidth={1.8} /><span>{item.label}</span>{item.count && <span className="nav-count">{item.count}</span>}</button>;
+        return <button key={item.id} className={cx("nav-item", (activePage === item.id || (activePage === "application" && item.id === "applications")) && "active")} onClick={() => nav(item.id)}><Icon size={16} strokeWidth={1.8} /><span>{item.label}</span>{item.count && <span className="nav-count">{item.count}</span>}</button>;
       })}</nav>
       <div className="sidebar-spacer" />
       <div className="nav-label">Support</div>
